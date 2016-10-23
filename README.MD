@@ -1,0 +1,1 @@
+Store gzipped xmls in data folder
