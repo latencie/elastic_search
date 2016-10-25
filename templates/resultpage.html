@@ -1,26 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <link rel="stylesheet" type="text/css" href="/style/style.css">
-  </head>
-  <body>
-    <div>
-      <img class="logo" src="/images/telegraaf_logo.png" alt="Telegraaf logo"></img>
-      <form action="." method="POST">
-          <input class="search_bar" type="text" name="text">
-          <input type="submit" name="my-form" value="Search">
-      </form>
-      <button class="advanced_button">Advanced Search</button>
-    </div>
+{% extends "index.html" %}
 
-    {% block content %}
-      <ul class="list search_results">       
-        {% for item in results %}
-          <li>
-              {{ item }}
-          </li>
-        {% endfor %}
-      </ul>
-    {% endblock content %}
-  </body>
-</html>
+{% block results %}
+  <ul class="list search_results">       
+    {% for item in results %}
+      <div>
+          {{ item }}
+      </div>
+    {% endfor %}
+  </ul>
+{% endblock results %}
