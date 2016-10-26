@@ -67,10 +67,8 @@ def search(es, text, fields=[], filter_query={}):
       },
       'filter': filter_query
     }
-
-    if len(fields) > 0 :
-      body['query_string']['fields'] = fields
-
+    # if len(fields) > 0 :
+    #   body['query_string']['fields'] = fields
     return es.search(index=INDEX, body=body)
 
 
@@ -140,3 +138,6 @@ def search_in_range(es, text, start, end):
 
 if __name__ == '__main__':
     es = Elasticsearch()
+    # index_data('/data', es)
+    # res = search(es, 'hoi')
+    # print res
