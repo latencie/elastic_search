@@ -1,0 +1,11 @@
+{% extends "index.html" %}
+
+{% block results %}
+  <ul class="list search_results">       
+    {% for item in results %}
+      <div>
+          {{ item }}
+      </div>
+    {% endfor %}
+  </ul>
+{% endblock results %}

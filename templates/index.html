@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link rel="stylesheet" type="text/css" href="/style/style.css">
+  </head>
+  <body>
+    <div>
+      <img class="logo" src="/images/telegraaf_logo.png" alt="Telegraaf logo"></img>
+      <form action="" method="POST">
+        <input class="search_bar" type="text" name="query" placeholder="Query"><br>
+        <input class="search_button" type="submit" name="search" value="Search">
+      </form>
+      <form action="" method="POST">
+        <input type="submit" class="advanced_button" name='advanced' value="Advanced Search">
+      </form>
+    </div>
+    {% block results %}
+    {% endblock results %}
+  </body>
+</html>
