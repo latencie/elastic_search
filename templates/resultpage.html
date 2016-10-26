@@ -1,11 +1,18 @@
 {% extends "index.html" %}
 
 {% block results %}
-  <ul class="list search_results">       
+  <ul class="list search_results"> 
+    De resultaten voor de zoekopdracht: {{ query }}
+    <br>
+    <br>      
     {% for item in results %}
-      <div>
-          {{ item }}
+      <div class="title_date">
+          {{ item[0] }}, {{ item[1]}}
       </div>
+      <div class="preview">
+          {{ item[2] }}
+      </div>
+      <br>
     {% endfor %}
   </ul>
 {% endblock results %}

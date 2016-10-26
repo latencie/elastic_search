@@ -23,9 +23,11 @@ def index_data(folder, es):
     return void
     """
     namespaces = {'pm': 'http://www.politicalmashup.nl', 'dc': 'http://purl.org/dc/elements/1.1/'}
-
+    files_indexed = []
+    print glob.glob( os.path.join(folder, '*.gz'))
     # Loop over all files in folder
     for filename in glob.glob( os.path.join(folder, '*.gz') ):
+        files_indexed.append(filename)
         # Open them and parse XML
         with gzip.open(filename) as xml:
             tree = ET.parse(xml)
@@ -38,16 +40,18 @@ def index_data(folder, es):
                 title = (article.find('pm:content/title', namespaces)).text
                 if title == None:
                     title = ''
-                text = (article.find('pm:content/text/p', namespaces)).text
 
-                # Construct JSON data structure and store in ES
-                data = {}
-                data['date'] = date
-                data['subject'] = subject
-                data['title'] = unicodedata.normalize('NFKD', unicode(title)).encode('ascii','ignore')
-                data['text'] = unicodedata.normalize('NFKD', unicode(text)).encode('ascii','ignore')
-                json_data = json.dumps(data)
-                res = es.index(index=INDEX, doc_type='article', body=json_data)
+                if (article.find('pm:content/text/p', namespaces)):
+                    text = (article.find('pm:content/text/p', namespaces)).text
+                    # Construct JSON data structure and store in ES
+                    data = {}
+                    data['date'] = date
+                    data['subject'] = subject
+                    data['title'] = unicodedata.normalize('NFKD', unicode(title)).encode('ascii','ignore')
+                    data['text'] = unicodedata.normalize('NFKD', unicode(text)).encode('ascii','ignore')
+                    json_data = json.dumps(data)
+                    res = es.index(index=INDEX, doc_type='article', body=json_data)
+    return True, files_indexed
 
 def search(es, text, fields=[], filter_query={}):
     """
@@ -139,10 +143,7 @@ def search_in_range(es, text, start, end):
 
 if __name__ == '__main__':
     es = Elasticsearch()
-<<<<<<< HEAD:es_index.py
-    # index_data('/data', es)
-    # res = search(es, 'hoi')
+    index_data('data', es)
+    # res = search(es, 'dier')
     # print res
-=======
-    print search_free(es, 'duits')
->>>>>>> 3defb45b5754c3649c3738a0a81a93e9563bf093:index.py
+    # print search_free(es, 'duits')
