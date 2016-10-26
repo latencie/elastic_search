@@ -69,7 +69,8 @@ def search(es, text, fields=[], filter_query={}):
     }
 
     if len(fields) > 0 :
-      body['query_string']['fields'] = fields
+        body['query']['query_string']['fields'] = fields
+    
 
     return es.search(index=INDEX, body=body)
 
@@ -140,3 +141,4 @@ def search_in_range(es, text, start, end):
 
 if __name__ == '__main__':
     es = Elasticsearch()
+    print search_free(es, 'duits')
