@@ -4,10 +4,10 @@
   <ul class="list search_results"> 
     <h1>De resultaten voor de zoekopdracht: {{ query }}</h1>
     <p>Aantal resultaten: {{ length }}</p>
-    <br>
     <br>      
     {% for item in results %}
     <div class="result">
+      <br>
       <div class="title_date">
           <b>{{ item[0] }}, {{ item[1]}}</b>
       </div>
