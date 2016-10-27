@@ -72,8 +72,9 @@ def search(es, text, fields=[], filter_query={}):
       'filter': filter_query
     }
 
-    # if len(fields) > 0 :
-    #   body['query_string']['fields'] = fields
+    #if len(fields) > 0 :
+    #    body['query']['query_string']['fields'] = fields
+
     return es.search(index=INDEX, body=body)
 
 
