@@ -6,6 +6,7 @@
     <br>
     <br>      
     {% for item in results %}
+    <div class="result">
       <div class="title_date">
           {{ item[0] }}, {{ item[1]}}
       </div>
@@ -13,6 +14,7 @@
           {{ item[2] }}
       </div>
       <br>
+    </div>
     {% endfor %}
   </ul>
 {% endblock results %}
