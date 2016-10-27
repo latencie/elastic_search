@@ -5,10 +5,10 @@ from elasticsearch import Elasticsearch
 app = Flask(__name__, static_url_path='')
 
 es = Elasticsearch()
-done, files = index_data('data', es)
-if done:
-    print('indexing done')
-    print files
+# done, files = index_data('data', es)
+# if done:
+#     print('indexing done')
+#     print files
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -20,15 +20,20 @@ def index():
         else:
             res = search(es, query)
             result = []
+
+            result_length = len(res['hits']['hits'])
+
             for i in range(len(res['hits']['hits'])):
-                result.append([])
+                if res['hits']['hits'] not in result:
+                    result.append([])
             i = 0
             for item in res['hits']['hits']:
+                print item
                 result[i].append(item[unicode('_source')][unicode('title')])
                 result[i].append(item[unicode('_source')][unicode('date')])
                 result[i].append(item[unicode('_source')][unicode('text')])
                 i += 1
-            return render_template('resultpage.html', results=result, query=query)
+            return render_template('resultpage.html', results=result, query=query, length=result_length)
 
     if 'advanced' in request.form:
         return render_template('advanced_search.html')
