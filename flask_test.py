@@ -19,6 +19,8 @@ def index():
         else:
             res = search(es, query)
             result = []
+            results_length = len(res['hits']['hits'])
+
             for i in range(len(res['hits']['hits'])):
                 result.append([])
 
@@ -29,7 +31,7 @@ def index():
                 result[i].append(item[unicode('_source')][unicode('text')])
                 i += 1
 
-            return render_template('resultpage.html', results=result, query=query)
+            return render_template('resultpage.html', results=result, query=query, length=results_length)
 
     if 'advanced' in request.form:
         return render_template('advanced_search.html')
