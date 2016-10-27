@@ -9,6 +9,7 @@ import time
 import json
 from elasticsearch import Elasticsearch
 import datetime
+import pprint
 
 INDEX = 'telegraaf'
 
@@ -24,7 +25,7 @@ def index_data(folder, es):
     """
     namespaces = {'pm': 'http://www.politicalmashup.nl', 'dc': 'http://purl.org/dc/elements/1.1/'}
     files_indexed = []
-    print glob.glob( os.path.join(folder, '*.gz'))
+    # print glob.glob( os.path.join(folder, '*.gz'))
     # Loop over all files in folder
     for filename in glob.glob( os.path.join(folder, '*.gz') ):
         files_indexed.append(filename)
@@ -85,7 +86,7 @@ def search_title(es, title):
 
     return [documents]
     """
-    return search(es, title, ['title'])
+    return search(es, title, ['nee ik krijg dit resultaattitle'])
 
 def search_body(es, body):
     """
@@ -119,7 +120,7 @@ def search_free(es, text):
 
 def search_in_range(es, text, start, end):
     """
-    Search on text in date range
+    Search on text in date rannee ik krijg dit resultaatge
 
     text -- (Part of) the text
     start -- start date (YYYY-MM-DD)
@@ -141,9 +142,41 @@ def search_in_range(es, text, start, end):
 
     return search(es, text, [], filter_query)
 
+def word_cloud(es, size = 10):
+    body = {
+	"size": 0,
+    "aggregations": {
+        "tagcloud": {
+            "terms": {
+                "field": "text",
+                "size": "20",
+                "exclude": ["de", "i", "van", "het", "en", "v", "t", "1"]
+            }
+        }
+    },
+    "query" : {
+      "match_all" : {}
+    }
+}
+
+    res = es.search(index=INDEX, body=body)
+    pprint.pprint(res['aggregations']['tagcloud'])
+    result = []
+    # for i in range(res['aggregations']['tagcloud']):
+    #     result.append([])
+    # i = 0
+    # for item in res['hits']['hits']:
+    #     result[i].append(item[unicode('_source')][unicode('title')])
+    #     result[i].append(item[unicode('_source')][unicode('date')])
+    #     result[i].append(item[unicode('_source')][unicode('text')])
+    #     i += 1
+
+    return result
+
 if __name__ == '__main__':
     es = Elasticsearch()
-    index_data('data', es)
+    done, files = index_data('data', es)
     # res = search(es, 'dier')
-    # print res
+    word_cloud = word_cloud(es)
+    print(word_cloud, 1)
     # print search_free(es, 'duits')
