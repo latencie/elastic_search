@@ -14,10 +14,9 @@ import numpy as np
 import operator
 
 INDEX = 'telegraaf'
-namespaces = {'pm': 'http://www.politicalmashup.nl', 'dc': 'http://purl.org/dc/elements/1.1/'}
 
 
-def index_data(folder, es):
+def index_data(folder, es, force = False):
     """
     Read in XML and save data to Elasticsearch
 
@@ -28,18 +27,24 @@ def index_data(folder, es):
     return void
     """
 
-    # Clean ES index
+    # Only reindex files if force is set
     if es.indices.exists(index=INDEX):
-        es.indices.delete(index=INDEX)
+        if force:
+            # Delete and recreate ES index
+            es.indices.delete(index=INDEX)
+            es.indices.create(index=INDEX)
+        else:
+            return True, []
     
 
     files_indexed = []
-    
+    namespaces = {'pm': 'http://www.politicalmashup.nl', 'dc': 'http://purl.org/dc/elements/1.1/'}
     # Loop over all files in folder
     for filename in glob.glob( os.path.join(folder, '*.gz') ):
         files_indexed.append(filename)
         # Open them and parse XML
         with gzip.open(filename) as xml:
+            print filename
             tree = ET.parse(xml)
 
             # Get all articles and extract data from it
@@ -51,16 +56,19 @@ def index_data(folder, es):
                 if title == None:
                     title = ''
 
-                if (article.find('pm:content/text/p', namespaces)):
+                text = ''
+                if article.find('pm:content/text/p', namespaces) != None:
                     text = (article.find('pm:content/text/p', namespaces)).text
-                    # Construct JSON data structure and store in ES
-                    data = {}
-                    data['date'] = date
-                    data['subject'] = subject
-                    data['title'] = unicodedata.normalize('NFKD', unicode(title)).encode('ascii','ignore')
-                    data['text'] = unicodedata.normalize('NFKD', unicode(text)).encode('ascii','ignore')
-                    json_data = json.dumps(data)
-                    res = es.index(index=INDEX, doc_type='article', body=json_data)
+
+                # Construct JSON data structure and store in ES
+                data = {}
+                data['date'] = date
+                data['subject'] = subject
+                data['title'] = unicodedata.normalize('NFKD', unicode(title)).encode('ascii','ignore')
+                data['text'] = unicodedata.normalize('NFKD', unicode(text)).encode('ascii','ignore')
+                json_data = json.dumps(data)
+                res = es.index(index=INDEX, doc_type='article', body=json_data)
+
     return True, files_indexed
 
 def term_and_doc_freq(filestext):
@@ -235,20 +243,20 @@ def search_in_range(es, text, start, end):
 
 def word_cloud(es, size = 10):
     body = {
-	"size": 0,
-    "aggregations": {
-        "tagcloud": {
-            "terms": {
-                "field": "text",
-                "size": "20",
-                "exclude": ["de", "i", "van", "het", "en", "v", "t", "1"]
+    	"size": 0,
+        "aggregations": {
+            "tagcloud": {
+                "terms": {
+                    "field": "text",
+                    "size": "20",
+                    "exclude": ["de", "i", "van", "het", "en", "v", "t", "1"]
+                }
             }
+        },
+        "query" : {
+          "match_all" : {}
         }
-    },
-    "query" : {
-      "match_all" : {}
     }
-}
 
     res = es.search(index=INDEX, body=body)
     pprint.pprint(res['aggregations']['tagcloud'])
