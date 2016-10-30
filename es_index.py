@@ -10,8 +10,12 @@ import json
 from elasticsearch import Elasticsearch
 import datetime
 import pprint
+import numpy as np
+import operator
 
 INDEX = 'telegraaf'
+namespaces = {'pm': 'http://www.politicalmashup.nl', 'dc': 'http://purl.org/dc/elements/1.1/'}
+
 
 def index_data(folder, es):
     """
@@ -23,7 +27,6 @@ def index_data(folder, es):
 
     return void
     """
-    namespaces = {'pm': 'http://www.politicalmashup.nl', 'dc': 'http://purl.org/dc/elements/1.1/'}
     files_indexed = []
     # print glob.glob( os.path.join(folder, '*.gz'))
     # Loop over all files in folder
@@ -53,6 +56,87 @@ def index_data(folder, es):
                     json_data = json.dumps(data)
                     res = es.index(index=INDEX, doc_type='article', body=json_data)
     return True, files_indexed
+
+def term_and_doc_freq(filestext):
+    tf = {}
+    dftext = {}
+    dfcount = {}
+
+    i = 1
+    for text in filestext:
+        words = text.split(' ')
+        text = 'd'+str(i) # d1, d2, d3
+        for word in words:
+            word = word.encode('UTF-8')
+            if(word == '.' or word == '' or word == '-' or word == "'"): # remove some punctuation
+                continue
+            if(word not in tf):
+                tf[word] = 1
+            elif(word in tf):
+                tf[word] += 1
+
+            if(word not in dftext):
+                dftext[word] = [text]
+            elif(dftext[word][0] != text):
+                dftext[word].append(text)
+        i += 1
+
+    for key, values in dftext.items():
+        dfcount[key] = len(values)
+
+    return tf, dfcount
+    # for date in filesdate:
+    #     year = date[:4] # get first 4 for year
+    #     if(year not in years):
+    #         years.append(year.encode('UTF-8'))
+    #
+    # for filename in glob.glob( os.path.join('data', '*.gz') ):
+    #     # print filename[15:19], years, type(filename[15:19])
+    #     if(filename[15:19] in years): #15:19 is the year part in da filename
+    #         with gzip.open(filename) as xml:
+    #             tree = ET.parse(xml)
+    #             # Get all articles and extract data from it
+    #             root = tree.getroot()
+    #             for article in root.findall('pm:root', namespaces):
+    #                 date = (article.find('pm:meta/dc:date', namespaces)).text
+    #                 if(date in filesdate):
+    #                     # print filesdate, date
+    #                     text = (article.find('pm:content/text/p', namespaces)).text
+    #                     text = unicodedata.normalize('NFKD', unicode(text)).encode('ascii','ignore')
+    #                     # print(text)
+    #                     if(text in filestext):
+    #
+                        # else:
+                            # print('!!!!!!!!!!!!!!!')
+
+            # for date in files:
+            #     if(filename in files):
+            #         print('##########' ,True)
+            #     else:
+            #         print('!!!!!!!!!!!')
+
+def years_freq(filesdate):
+    years = {}
+    for date in filesdate:
+        year = date[:4] # get first 4 for year
+        year = year.encode('UTF-8')
+        if(year in years):
+            years[year] += 1
+        elif(year not in years):
+            years[year] = 1
+
+    return years
+
+def tfidf(tf, df, num_docs): #{{word1 : tf}, {word2 : tf}, ..}, {{word1 : df}, {word2 : df}, ..}
+    tfidf_weight = {}
+    if(num_docs != 0):
+        for key, value in tf.items():
+            if(df[key] != 0 and value != 0):
+                tfidf_weight[key] = (1 + np.log10(value))*np.log10(num_docs/df[key])
+
+    tfidf_sorted = sorted(tfidf_weight.items(), key=operator.itemgetter(1))
+
+    return tfidf_sorted[-10:]
 
 def search(es, text, fields=[], filter_query={}):
     """

@@ -1,10 +1,13 @@
 {% extends "index.html" %}
 
 {% block results %}
-  <ul class="list search_results"> 
+  <ul class="list search_results">
     <h1>De resultaten voor de zoekopdracht: {{ query }}</h1>
     <p>Aantal resultaten: {{ length }}</p>
-    <br>      
+    <div class="word_cloud">
+        <h2>Word cloud</h2>
+        <p>{{word_cloud}}</p>
+    </div>
     {% for item in results %}
     <div class="result">
       <br>
