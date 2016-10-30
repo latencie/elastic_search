@@ -1,0 +1,12 @@
+.row.results {
+	margin-bottom: 1em;
+}
+
+ul.facets {
+	list-style-type: none;
+}
+
+canvas#chart {
+	width: 100%;
+	height: 200px;
+}

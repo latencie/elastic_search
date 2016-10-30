@@ -1,28 +1,50 @@
 {% extends "index.html" %}
 
-{% block results %}
-<script src='Chart.min.js'></script>
-<canvas id="chart" width="600" height="400"></canvas>
-  <ul class="list search_results">
+{% block head %}
+<script src='js/Chart.min.js'></script>
+{% endblock %}
+
+{% block content %}
+{{ super() }}
+
+<div class="row">
+  <div class="small-12 columns">
+    <canvas id="chart" height="400"></canvas>
+  </div>
+</div>
+
+<div class="row">
+  <div class="small-12 large-3 columns">
+    <h4>Facetten</h4>
+    <ul class="facets">
+      {% for facet in facets %}
+        <li><a href="?query={{ query }}&search=Search&facet={{ facet }}">{{ facet }}</a></li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="small-12 large-9 columns">
     <h1>De resultaten voor de zoekopdracht: {{ query }}</h1>
     <p>Aantal resultaten: {{ length }}</p>
     <div class="word_cloud">
-        <h2>Word cloud</h2>
-        <p>{{word_cloud}}</p>
+      <h2>Word cloud</h2>
+      <p>{{word_cloud}}</p>
     </div>
+
     {% for item in results %}
-    <div class="result">
-      <br>
-      <div class="title_date">
-          <b>{{ item[0] }}, {{ item[1]}}</b>
+    <div class="row results">
+      <div class="small-12 columns">
+        <b>{{ item[0] }}, {{ item[1]}}</b>
       </div>
-      <div class="preview">
-          {{ item[2] }}
+
+      <div class="small-12 columns">
+        {{ item[2] }}
       </div>
-      <br>
     </div>
     {% endfor %}
-  </ul>
+  </div>
+</div>
+
 <script>
    // bar chart data
    var barData = {
@@ -59,4 +81,4 @@
    });
 
 </script>
-{% endblock results %}
+{% endblock %}
