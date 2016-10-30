@@ -27,8 +27,14 @@ def index_data(folder, es):
 
     return void
     """
+
+    # Clean ES index
+    if es.indices.exists(index=INDEX):
+        es.indices.delete(index=INDEX)
+    
+
     files_indexed = []
-    # print glob.glob( os.path.join(folder, '*.gz'))
+    
     # Loop over all files in folder
     for filename in glob.glob( os.path.join(folder, '*.gz') ):
         files_indexed.append(filename)
