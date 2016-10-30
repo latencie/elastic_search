@@ -1,22 +1,19 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <link rel="stylesheet" type="text/css" href="/style/style.css">
-  </head>
-  <body>
-    <div class="search">
-      <img class="logo" src="/images/telegraaf_logo.png" alt="Telegraaf logo"></img>
-      <form action="" method="POST">
-        <input class="search_bar" type="text" name="query" placeholder="Query here"><br>
-        <input class="search_button" type="submit" name="search" value="Search">
-      </form>
-      <form action="" method="POST">
-        <input type="submit" class="advanced_button" name='advanced' value="Advanced Search">
-      </form>
-    </div>
-    {% block chart %}
-    {% endblock chart %}
-    {% block results %}
-    {% endblock results %}
-  </body>
-</html>
+{% extends "layout.html" %}
+<head>
+    <link rel="telegraaf_logo"
+    href="{{ url_for('static', filename='/images/telegraaf_logo.png') }}">
+</head>
+{% block content %}
+<div class="row">
+  <div class="small-12 columns">
+    <img class="logo" src="/images/telegraaf_logo.png" alt="Telegraaf logo"></img>
+    <form action="" method="POST">
+      <input class="search_bar" type="text" name="query" placeholder="Query here"><br>
+      <input class="search_button button" type="submit" name="search" value="Search">
+    </form>
+    <form action="" method="POST">
+      <input type="submit" class="advanced_button button" name='advanced' value="Advanced Search">
+    </form>
+  </div>
+</div>
+{% endblock %}

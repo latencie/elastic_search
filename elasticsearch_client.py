@@ -12,12 +12,13 @@ import datetime
 import pprint
 import numpy as np
 import operator
+import moment
+
 
 INDEX = 'telegraaf'
-namespaces = {'pm': 'http://www.politicalmashup.nl', 'dc': 'http://purl.org/dc/elements/1.1/'}
 
 
-def index_data(folder, es):
+def index_data(folder, es, force = False):
     """
     Read in XML and save data to Elasticsearch
 
@@ -27,13 +28,25 @@ def index_data(folder, es):
 
     return void
     """
+
+    # Only reindex files if force is set
+    if es.indices.exists(index=INDEX):
+        if force:
+            # Delete and recreate ES index
+            es.indices.delete(index=INDEX)
+            es.indices.create(index=INDEX)
+        else:
+            return True, []
+
+
     files_indexed = []
-    # print glob.glob( os.path.join(folder, '*.gz'))
+    namespaces = {'pm': 'http://www.politicalmashup.nl', 'dc': 'http://purl.org/dc/elements/1.1/'}
     # Loop over all files in folder
     for filename in glob.glob( os.path.join(folder, '*.gz') ):
         files_indexed.append(filename)
         # Open them and parse XML
         with gzip.open(filename) as xml:
+            print filename
             tree = ET.parse(xml)
 
             # Get all articles and extract data from it
@@ -45,16 +58,18 @@ def index_data(folder, es):
                 if title == None:
                     title = ''
 
-                if (article.find('pm:content/text/p', namespaces)):
+                text = ''
+                if article.find('pm:content/text/p', namespaces) != None:
                     text = (article.find('pm:content/text/p', namespaces)).text
-                    # Construct JSON data structure and store in ES
-                    data = {}
-                    data['date'] = date
-                    data['subject'] = subject
-                    data['title'] = unicodedata.normalize('NFKD', unicode(title)).encode('ascii','ignore')
-                    data['text'] = unicodedata.normalize('NFKD', unicode(text)).encode('ascii','ignore')
-                    json_data = json.dumps(data)
-                    res = es.index(index=INDEX, doc_type='article', body=json_data)
+
+                # Construct JSON data structure and store in ES
+                data = {}
+                data['date'] = date
+                data['title'] = unicodedata.normalize('NFKD', unicode(title)).encode('ascii','ignore')
+                data['text'] = unicodedata.normalize('NFKD', unicode(text)).encode('ascii','ignore')
+                json_data = json.dumps(data)
+                res = es.index(index=INDEX, doc_type=subject, body=json_data)
+
     return True, files_indexed
 
 def term_and_doc_freq(filestext):
@@ -138,12 +153,13 @@ def tfidf(tf, df, num_docs): #{{word1 : tf}, {word2 : tf}, ..}, {{word1 : df}, {
 
     return tfidf_sorted[-10:]
 
-def search(es, text, fields=[], filter_query={}):
+def search(es, text, fields=[], facet='', filter_query={}):
     """
     Search
 
     text -- Search query
     fields -- fields to search in
+    facet -- Search on specific doc type/facet
     filter_query -- filter
 
     return [documents]
@@ -157,10 +173,33 @@ def search(es, text, fields=[], filter_query={}):
       'filter': filter_query
     }
 
-    #if len(fields) > 0 :
-    #    body['query']['query_string']['fields'] = fields
+    if len(fields) > 0 :
+        body['query']['query_string']['fields'] = fields
 
-    return es.search(index=INDEX, body=body)
+    res = None
+
+    if facet != '':
+        res = es.search(index=INDEX, doc_type=facet, body=body)
+    else:
+        res = es.search(index=INDEX, body=body)
+
+    hits = len(res['hits']['hits'])
+
+    count_per_month = {}
+    for item in res['hits']['hits']:
+        date = moment.date(item[unicode('_source')][unicode('date')], 'YYYY-MM-DD')
+        year = date.format('YYYY')
+        month = date.format('MMMM')
+
+        if year not in count_per_month:
+            count_per_month[year] = {}
+
+        if month not in count_per_month[year]:
+            count_per_month[year][month] = 0
+
+        count_per_month[year][month] += 1
+
+    return res['hits']['hits'], hits, count_per_month
 
 
 def search_title(es, title):
@@ -171,7 +210,7 @@ def search_title(es, title):
 
     return [documents]
     """
-    return search(es, title, ['nee ik krijg dit resultaattitle'])
+    return search(es, title, ['title'])
 
 def search_body(es, body):
     """
@@ -181,7 +220,7 @@ def search_body(es, body):
 
     return [documents]
     """
-    return search(es, body, ['text'])
+    return search(es, body, ['text']), hits, count_per_month
 
 def search_date(es, date):
     """
@@ -191,7 +230,7 @@ def search_date(es, date):
 
     return [documents]
     """
-    return search(es, date, ['date'])
+    return search(es, date, ['date']), hits, count_per_month
 
 def search_free(es, text):
     """
@@ -201,11 +240,11 @@ def search_free(es, text):
 
     return [documents]
     """
-    return search(es, text)
+    return search(es, text), hits, count_per_month
 
 def search_in_range(es, text, start, end):
     """
-    Search on text in date rannee ik krijg dit resultaatge
+    Search on text in date range
 
     text -- (Part of) the text
     start -- start date (YYYY-MM-DD)
@@ -214,10 +253,10 @@ def search_in_range(es, text, start, end):
     return [documents]
     """
     start_split = start.split('-')
-    start = datetime.date(start_split[0], start_split[1], start_split[2])
+    start = datetime.date(int(start_split[0]), int(start_split[1]), int(start_split[2]))
 
     end_split = end.split('-')
-    end = datetime.date(end_split[0], end_split[1], end_split[2])
+    end = datetime.date(int(end_split[0]), int(end_split[1]), int(end_split[2]))
     filter_query = {
       'range': {
         'date': {'gte': start, 'lte': end}
@@ -225,24 +264,24 @@ def search_in_range(es, text, start, end):
     }
     filter_query = json.dumps(filter_query)
 
-    return search(es, text, [], filter_query)
+    return search(es, text, [], filter_query), hits, count_per_month
 
 def word_cloud(es, size = 10):
     body = {
-	"size": 0,
-    "aggregations": {
-        "tagcloud": {
-            "terms": {
-                "field": "text",
-                "size": "20",
-                "exclude": ["de", "i", "van", "het", "en", "v", "t", "1"]
+    	"size": 0,
+        "aggregations": {
+            "tagcloud": {
+                "terms": {
+                    "field": "text",
+                    "size": "20",
+                    "exclude": ["de", "i", "van", "het", "en", "v", "t", "1"]
+                }
             }
+        },
+        "query" : {
+          "match_all" : {}
         }
-    },
-    "query" : {
-      "match_all" : {}
     }
-}
 
     res = es.search(index=INDEX, body=body)
     pprint.pprint(res['aggregations']['tagcloud'])
@@ -261,7 +300,7 @@ def word_cloud(es, size = 10):
 if __name__ == '__main__':
     es = Elasticsearch()
     done, files = index_data('data', es)
-    # res = search(es, 'dier')
-    word_cloud = word_cloud(es)
-    print(word_cloud, 1)
+    res = search(es, 'kaas')
+    # word_cloud = word_cloud(es)
+    # print(word_cloud, 1)
     # print search_free(es, 'duits')

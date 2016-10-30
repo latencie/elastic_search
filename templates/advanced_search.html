@@ -1,21 +1,17 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <link rel="stylesheet" type="text/css" href="/style/style.css">
-  </head>
-  <body>
-    <div>
-      <img class="logo" src="/images/telegraaf_logo.png" alt="Telegraaf logo"></img>
-      <br>
-      You are now in advanced search mode.
-      <br>
-      <form action="" method="POST">
-        <input class="search_bar" type="text" name="advanced_query" placeholder="Query"><br>
-        <input class="search_bar_year" type="number" name="advanced_query_year" placeholder="Year"><br>
-        <input class="search_button" type="submit" name="advanced_search" value="Search">
-      </form>
-    </div>
-    {% block results %}
-    {% endblock results %}
-  </body>
-</html>
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="row">
+  <div class="small-12 columns">
+    <img class="logo" src="/images/telegraaf_logo.png" alt="Telegraaf logo"></img>
+    <br>
+    You are now in advanced search mode.
+    <br>
+    <form action="" method="POST">
+      <h4>Search on title</h4>
+      <input class="search_bar_year_start" type="text" name="title" placeholder="title"><br>
+      <input class="search_button button" type="submit" name="advanced_search" value="advanced_search">
+    </form>
+  </div>
+</div>
+{% endblock %}
