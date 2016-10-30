@@ -210,7 +210,8 @@ def search_title(es, title):
 
     return [documents]
     """
-    return search(es, title, ['title'])
+    res, hits, count_per_month = search(es, title, ['title'])
+    return res, hits, count_per_month
 
 def search_body(es, body):
     """

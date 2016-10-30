@@ -67,7 +67,8 @@ def index():
             return render_template('resultpage.html', results=results)
         else:
             # facet = get_value(request, 'facet')
-            res = search_title(es, title)
+            res, result_length, count_per_month = search_title(es, title)
+            print result_length
             result = []
             facets = []
             filesdate, filestext = [], [] # To store the found files and compute tf-idfs
@@ -100,13 +101,9 @@ def index():
                 word_cloud.append(x[0])
             word_cloud = word_cloud[::-1]
 
-            labels = []
-            values = []
-            for key, value in years_freq.items():
-                labels.append(key)
-                values.append(value)
+            labels, values = extract_labels_values(count_per_month)
 
-            return render_template('resultpage.html', results=result, query=query, length=result_length,
+            return render_template('resultpage.html', results=result, query=title, length=result_length,
                                     word_cloud=word_cloud, years_freq=years_freq, values=values, labels=labels,
                                     facets=facets)
 
