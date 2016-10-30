@@ -18,16 +18,15 @@ def index():
             results = ['Please ask us something!']
             return render_template('resultpage.html', results=results)
         else:
-            res = search(es, query)
+            res, result_length, count_per_month = search(es, query)
             result = []
             filesdate, filestext = [], [] # To store the found files and compute tf-idfs
-            result_length = len(res['hits']['hits'])
 
-            for i in range(len(res['hits']['hits'])):
-                if res['hits']['hits'] not in result:
+            for i in range(len(res)):
+                if res not in result:
                     result.append([])
             i = 0
-            for item in res['hits']['hits']:
+            for item in res:
                 result[i].append(item[unicode('_source')][unicode('title')])
                 result[i].append(item[unicode('_source')][unicode('date')])
                 result[i].append(item[unicode('_source')][unicode('text')])
@@ -45,20 +44,28 @@ def index():
             for x in top10:
                 word_cloud.append(x[0])
             word_cloud = word_cloud[::-1]
-            chart()
-            return render_template('resultpage.html', results=result, query=query, length=result_length, \
-                                    word_cloud=word_cloud, years_freq=years_freq)
+            
+            labels, values = extract_labels_values(count_per_month)
+
+            return render_template('resultpage.html', results=result, query=query, length=result_length,
+                                    word_cloud=word_cloud, years_freq=years_freq, values=values, labels=labels)
 
     if 'advanced' in request.form:
         return render_template('advanced_search.html')
 
     return render_template('index.html')
 
-def chart():
-    print('CHART')
+def extract_labels_values(count_per_month):
     labels = ["January","February","March","April","May","June","July","August"]
-    values = [10,9,8,7,6,4,7,8]
-    return render_template('chart.html', values=values, labels=labels)
+    values = [0,0,0,0,0,0,0,0]
+
+    for year in count_per_month:
+        for month in count_per_month[year]:
+            values[labels.index(month)] = count_per_month[year][month]
+    
+
+    return labels, values
+
 
 if __name__ == "__main__":
     app.run()

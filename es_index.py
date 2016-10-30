@@ -12,6 +12,8 @@ import datetime
 import pprint
 import numpy as np
 import operator
+import moment
+
 
 INDEX = 'telegraaf'
 
@@ -171,10 +173,27 @@ def search(es, text, fields=[], filter_query={}):
       'filter': filter_query
     }
 
-    #if len(fields) > 0 :
-    #    body['query']['query_string']['fields'] = fields
+    if len(fields) > 0 :
+        body['query']['query_string']['fields'] = fields
 
-    return es.search(index=INDEX, body=body)
+    res = es.search(index=INDEX, body=body)
+    hits = len(res['hits']['hits'])
+
+    count_per_month = {}
+    for item in res['hits']['hits']:
+        date = moment.date(item[unicode('_source')][unicode('date')], 'YYYY-MM-DD')
+        year = date.format('YYYY')
+        month = date.format('MMMM')
+
+        if year not in count_per_month:
+            count_per_month[year] = {}
+
+        if month not in count_per_month[year]:
+            count_per_month[year][month] = 0
+
+        count_per_month[year][month] += 1
+
+    return res['hits']['hits'], hits, count_per_month
 
 
 def search_title(es, title):
@@ -185,7 +204,7 @@ def search_title(es, title):
 
     return [documents]
     """
-    return search(es, title, ['nee ik krijg dit resultaattitle'])
+    return search(es, title, ['title']), hits, count_per_month
 
 def search_body(es, body):
     """
@@ -195,7 +214,7 @@ def search_body(es, body):
 
     return [documents]
     """
-    return search(es, body, ['text'])
+    return search(es, body, ['text']), hits, count_per_month
 
 def search_date(es, date):
     """
@@ -205,7 +224,7 @@ def search_date(es, date):
 
     return [documents]
     """
-    return search(es, date, ['date'])
+    return search(es, date, ['date']), hits, count_per_month
 
 def search_free(es, text):
     """
@@ -215,11 +234,11 @@ def search_free(es, text):
 
     return [documents]
     """
-    return search(es, text)
+    return search(es, text), hits, count_per_month
 
 def search_in_range(es, text, start, end):
     """
-    Search on text in date rannee ik krijg dit resultaatge
+    Search on text in date range
 
     text -- (Part of) the text
     start -- start date (YYYY-MM-DD)
@@ -239,7 +258,7 @@ def search_in_range(es, text, start, end):
     }
     filter_query = json.dumps(filter_query)
 
-    return search(es, text, [], filter_query)
+    return search(es, text, [], filter_query), hits, count_per_month
 
 def word_cloud(es, size = 10):
     body = {
@@ -275,7 +294,7 @@ def word_cloud(es, size = 10):
 if __name__ == '__main__':
     es = Elasticsearch()
     done, files = index_data('data', es)
-    # res = search(es, 'dier')
-    word_cloud = word_cloud(es)
-    print(word_cloud, 1)
+    res = search(es, 'kaas')
+    # word_cloud = word_cloud(es)
+    # print(word_cloud, 1)
     # print search_free(es, 'duits')
